@@ -284,6 +284,19 @@ h1{background:linear-gradient(180deg,#D93A2B,#8E1C16);-webkit-background-clip:te
 
 
 /* ===== 섯다 ===== */
+.sdseat.fold.shown{opacity:.88;filter:grayscale(.25)}
+.sdhand.t-dead{color:#D5DBDF;font-size:15px;background:rgba(40,45,50,.7)}
+/* 선 정하기 */
+.sheet.draw{width:min(520px,100%);text-align:center;border:3px solid #C9952B;background:radial-gradient(circle at 50% 0,#FFF6D5,#FFFDF6 60%)}
+.sheet.draw h2{color:#B5261E;font-size:32px}
+.sheet.draw p b{color:#B5261E}
+.drawrow{flex-wrap:wrap;--w:52px;gap:8px}
+.drawrow button{transition:transform .15s}
+.drawrow button:hover{transform:translateY(-8px)}
+.drawres{display:grid;justify-items:center;gap:4px;font-weight:700}
+.drawres b{font-family:var(--f-display);font-weight:400;font-size:22px;color:#B5261E}
+.drawres.win .card{box-shadow:0 0 0 3px #FFD54F,0 0 20px rgba(255,213,79,.9)}
+.sheet.draw .mbtns{justify-content:center}
 .sdc{position:relative}
 .sdc.opened .card{box-shadow:0 0 0 2px #fff,0 0 12px rgba(255,255,255,.7)}
 .optag{position:absolute;z-index:2;left:50%;top:-9px;transform:translateX(-50%);font-size:10px;font-weight:700;background:#fff;color:#2A1E16;border-radius:99px;padding:1px 6px;border:1.5px solid #2A1E16;white-space:nowrap}
@@ -477,7 +490,7 @@ h1{background:linear-gradient(180deg,#D93A2B,#8E1C16);-webkit-background-clip:te
             <tr><td>3고부터</td><td>×2, ×4, ×8…</td></tr>
             <tr><td>흔들기 · 폭탄 · 피박 · 광박 · 멍따 · 고박</td><td>각 ×2</td></tr>
           </table>
-          <p>7점 이상 나면 고/스톱을 고릅니다. 피박은 상대 피가 1~7장일 때, 광박은 내가 광으로 났는데 상대 광이 0장일 때 적용됩니다. 국진(9월 열끗)은 먹을 때 열끗으로 쓸지 쌍피로 쓸지 고르며, 쌍피로 쓰면 피로 뺏길 수도 있습니다. 같은 월 3장을 들고 바닥에 1장이 있으면 자동으로 폭탄이 되고, 도탄 2장(뒤집기만 하는 패)을 받습니다. 판돈은 점당 초급 100원, 중급 500원, 고급 1,000원이고 처음에 10만원으로 시작합니다. 보너스패는 손에서 내면 바로 가져가고 더미에서 1장 받아 한 번 더 내며, 뒤집혀 나오면 가져가고 한 장 더 뒤집습니다. 둘 다 못 나면 나가리, 다음 판은 2배입니다.</p>
+          <p>7점 이상 나면 고/스톱을 고릅니다. 피박은 상대 피가 1~7장일 때, 광박은 내가 광으로 났는데 상대 광이 0장일 때 적용됩니다. 국진(9월 열끗)은 먹을 때 열끗으로 쓸지 쌍피로 쓸지 고르며, 쌍피로 쓰면 피로 뺏길 수도 있습니다. 같은 월 3장을 들고 바닥에 1장이 있으면 자동으로 폭탄이 되고, 도탄 2장(뒤집기만 하는 패)을 받습니다. 판돈은 점당 초급 100원, 중급 500원, 고급 1,000원이고 처음에 10만원으로 시작합니다. 보너스패는 손에서 내면 바로 가져가고 더미에서 1장 받아 한 번 더 내며, 뒤집혀 나오면 가져가고 한 장 더 뒤집습니다. 둘 다 못 나면 나가리, 다음 판은 2배입니다. 첫 판 선은 낮일밤장으로 정합니다. 한 장씩 뽑아서 낮(6~18시)엔 낮은 달, 밤엔 높은 달이 선이고, 다음 판부터는 이긴 사람이 선입니다.</p>
         </details>
       </div>
     </aside>
@@ -1888,7 +1901,30 @@ function startRound(){
   const g=GID;
   (async()=>{try{await dealAnim(g);say('start')}catch(e){if(!(e instanceof Abort))console.error(e);return}runGame(g)})();
 }
-function newMatch(){carry=1;starter=0;startRound()}
+// 선 정하기(낮일밤장): 낮(06~18시)엔 낮은 달, 밤엔 높은 달을 뽑은 쪽이 선
+async function pickStarter(g){
+  const h=new Date().getHours(),day=h>=6&&h<18;
+  const rule=day?'지금은 낮이라 <b>낮은 달</b>을 뽑은 쪽이 선입니다 (낮일밤장의 낮일)':'지금은 밤이라 <b>높은 달</b>을 뽑은 쪽이 선입니다 (낮일밤장의 밤장)';
+  for(;;){
+    const pool=shuffle(buildDeck().filter(c=>c.m<=12)).slice(0,8);
+    const k=await ask('선 정하기',`<p>${rule}. 패를 한 장 뽑으세요.</p><div class="pickrow drawrow">${pool.map((c,i)=>`<button data-pick="${i}" aria-label="${i+1}번째 패">${backHTML()}</button>`).join('')}</div>`,[],{cls:'draw'});
+    if(g!==GID)return false;
+    let a;do{a=Math.floor(Math.random()*pool.length)}while(a===k);
+    const mine=pool[k],ai=pool[a],tie=mine.m===ai.m,meFirst=day?mine.m<ai.m:mine.m>ai.m;
+    sfx.slap(.9);if(!tie)sfx.fanfare('conf');
+    await ask(tie?'같은 달! 다시':meFirst?'내가 선!':'상대가 선',
+      `<div class="pickrow"><div class="drawres${!tie&&meFirst?' win':''}"><span>${myName}</span>${cardHTML(mine)}<b>${mine.m}월</b></div><div class="drawres${!tie&&!meFirst?' win':''}"><span>${CHAR[level].name}</span>${cardHTML(ai)}<b>${ai.m}월</b></div></div><p>${tie?'같은 달이 나와서 다시 뽑습니다.':rule+'.'}</p>`,
+      [{label:tie?'다시 뽑기':'시작',v:1,primary:true}],{cls:'draw'});
+    if(g!==GID)return false;
+    if(!tie){starter=meFirst?0:1;return true}
+  }
+}
+function newMatch(){
+  carry=1;GID++;const g=GID;closeModal();handPick=null;
+  $('#oppName').textContent=CHAR[level].name;$('#oppAv').innerHTML=avatarHTML(aiAv());$('#oppAv').dataset.k=aiAv();
+  $('#meAv').innerHTML=avatarHTML(myAv());$('#meAv').dataset.k=myAv();$('#meName').textContent=myName;renderRec();renderMoney();
+  pickStarter(g).then(ok=>{if(ok&&g===GID)startRound()});
+}
 
 /* 이벤트 */
 $('#hand').addEventListener('click',e=>{
@@ -2098,10 +2134,10 @@ function sdRender(opts){
   opts=opts||{};
   SD.players.forEach((p,i)=>{
     const seat=$('#sdSeat'+i);if(!seat)return;
-    seat.classList.toggle('fold',p.folded);seat.classList.toggle('turn',SD.act===i);
+    seat.classList.toggle('fold',p.folded);seat.classList.toggle('shown',p.folded&&!!p.revealed);seat.classList.toggle('turn',SD.act===i);
     $('#sdMoney'+i).textContent=won(p.money);
     $('#sdBet'+i).textContent=p.folded?'다이':p.allin?`올인 ${won(p.contrib)}`:p.contrib?`베팅 ${won(p.contrib)}`:'';
-    if(!opts.keepCards)$('#sdCards'+i).innerHTML=sdCardsHTML(p,i,{reveal:p.revealed&&!p.folded,ghost:opts.ghost&&opts.ghost[i]});
+    if(!opts.keepCards)$('#sdCards'+i).innerHTML=sdCardsHTML(p,i,{reveal:p.revealed,ghost:opts.ghost&&opts.ghost[i]});
     const hl=$('#sdHand'+i);hl.textContent=p.handLabel||'';hl.className='sdhand'+(p.handTier?' t-'+p.handTier:'');
     hl.classList.toggle('win',!!p.winner);
   });
@@ -2365,6 +2401,17 @@ async function sdFinish(g,wins,best){
   sdRender();
   SD.dealer=top.p.id; // 이긴 사람이 다음 판 선
   await sleep(500);sdGuard(g);
+  // 판이 끝났으니 다이한 사람 패(그리고 다이 승으로 안 깐 패)도 전부 공개
+  const late=SD.players.filter(p=>p.cards.length>=2&&!p.revealed);
+  if(late.length){
+    for(const p of late){const o=sdOptions(p.cards)[0];p.revealed=true;p.handLabel=(p.folded?'다이 · ':'')+o.r.name;p.handTier=p.folded?'dead':sdTier(o.r)}
+    sdRender();
+    for(const p of late){const el=$('#sdCards'+p.id);el&&el.getAnimations().forEach(a=>a.cancel());el&&el.querySelectorAll('.sdc').forEach((c,k)=>c.animate([{transform:'rotateY(90deg)'},{transform:'none'}],{duration:300,delay:k*50,easing:'ease-out'}))}
+    sfx.tap(.8);
+    const dead=late.filter(p=>p.folded);
+    if(dead.length)sdLog('다이한 패: '+dead.map(p=>`${p.name} <em>${p.handLabel.replace('다이 · ','')}</em>`).join(', '),'sep');
+    await sleep(400);sdGuard(g);
+  }
   await sdHandLoopNext(g,false);
 }
 async function sdHandLoopNext(g,rematch){
