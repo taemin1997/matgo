@@ -481,6 +481,7 @@ h1{background:linear-gradient(180deg,#D93A2B,#8E1C16);-webkit-background-clip:te
             <tr><td>띠 5장</td><td>1점, 이후 장당 +1</td></tr>
             <tr><td>피 10장 (쌍피=2장)</td><td>1점, 이후 장당 +1</td></tr>
             <tr><td>쪽 · 따닥 · 싹쓸이 · 뻑 먹기</td><td>상대 피 1장</td></tr>
+            <tr><td>처음부터 깔린 같은 월 3장 먹기</td><td>상대 피 1장</td></tr>
             <tr><td>자뻑 (내가 싼 뻑 먹기)</td><td>상대 피 2장</td></tr>
             <tr><td>보너스 쌍피 · 쓰리피</td><td>피 2·3장 + 상대 피 1장</td></tr>
             <tr><td>첫뻑 (내 첫 턴에 뻑)</td><td>바로 7점 받음</td></tr>
@@ -678,7 +679,7 @@ function resolve(S,p,card,choiceA,chooseB,opts){
       else{
         take([card,...F]);mode='eat3';
         const ow=S.ppeok[m];
-        if(ow!==undefined){steal+=ow===p?2:1;ev.push(ow===p?'자뻑':'뻑 먹기')}
+        if(ow!==undefined){steal+=ow===p?2:1;ev.push(ow===p?'자뻑':'뻑 먹기')}else{steal++;ev.push('네 장 먹기')}
         delete S.ppeok[m];
       }
     }
@@ -706,7 +707,7 @@ function resolve(S,p,card,choiceA,chooseB,opts){
       else{
         take(Fd);taken.push(d);
         const ow=S.ppeok[d.m];
-        if(ow!==undefined){steal+=ow===p?2:1;ev.push(ow===p?'자뻑':'뻑 먹기')}
+        if(ow!==undefined){steal+=ow===p?2:1;ev.push(ow===p?'자뻑':'뻑 먹기')}else{steal++;ev.push('네 장 먹기')}
         delete S.ppeok[d.m];
       }
     }
@@ -1427,6 +1428,7 @@ const CS={
   '따닥':{c:['#FF7A1A','#FFE1B5'],sub:'네 장 싹! 피 1장',fx:'conf'},
   '싹쓸이':{c:['#11A9CF','#CBF4FF'],sub:'바닥 싹 쓸었다! 피 1장',fx:'conf'},
   '뻑 먹기':{c:['#7E57C2','#E7DCFF'],sub:'묶인 패 회수! 피 1장',fx:'conf'},
+  '네장먹기':{c:['#FF7A1A','#FFE1B5'],sub:'깔린 세 장을 한 번에! 피 1장',fx:'conf'},
   '자뻑':{c:['#7E57C2','#E7DCFF'],sub:'내가 싼 뻑! 피 2장',fx:'conf'},
   '폭탄':{c:['#E53935','#FFD4C8'],sub:'4장 쓸고 피 1장 + 도탄 2장',fx:'boom'},
   '흔들기':{c:['#F2A900','#FFF0B8'],sub:'이기면 점수 2배',fx:'shake'},
@@ -1753,7 +1755,7 @@ async function doMove(g,p,card,choiceA,shake,chooseB){
   let msg=`<b>${name}</b>: ${cardName(card)} 냄 → ${cardName(res.d)} 뒤집음`;
   if(res.taken.length)msg+=` · ${res.taken.length}장 먹음`;
   if(res.ev.length)msg+=' · '+res.ev.map(e=>`<em>${e}</em>`).join(' ');
-  if(res.stolen){const why=res.ev.filter(e=>['쪽','따닥','싹쓸이','뻑 먹기','자뻑','폭탄','보너스'].includes(e));msg+=` · 상대 피 ${res.stolen}장 뺏음${why.length?` (${why.join('·')} 때문)`:''}`}
+  if(res.stolen){const why=res.ev.filter(e=>['쪽','따닥','싹쓸이','뻑 먹기','자뻑','네 장 먹기','폭탄','보너스'].includes(e));msg+=` · 상대 피 ${res.stolen}장 뺏음${why.length?` (${why.join('·')} 때문)`:''}`}
   log(msg,who);
   render();
   const big=res.ev.filter(e=>e!=='흔들기'&&e!=='폭탄'&&e!=='보너스');
